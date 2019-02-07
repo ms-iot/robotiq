@@ -2,10 +2,14 @@
 
 #include <string.h>
 
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 
 #include <boost/ref.hpp>
 #include <boost/interprocess/sync/scoped_lock.hpp>
+#include <boost/chrono.hpp>
+#include <boost/thread/thread.hpp> 
 
 #include <soem/ethercattype.h>
 #include <soem/nicdrv.h>
@@ -101,7 +105,7 @@ namespace
         handleErrors();
       }
 
-      usleep(THREAD_SLEEP_TIME);
+      boost::this_thread::sleep_for(boost::chrono::microseconds(THREAD_SLEEP_TIME));
     }
   }
 

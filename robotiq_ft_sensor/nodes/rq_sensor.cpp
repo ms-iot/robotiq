@@ -42,6 +42,8 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <chrono>
+#include <thread>
 
 #include "ros/ros.h"
 #include "std_msgs/String.h"
@@ -157,7 +159,7 @@ static void wait_for_other_connection()
 	while(ros::ok())
 	{
 		ROS_INFO("Waiting for sensor connection...");
-		usleep(1000000);//Attend 1 seconde.
+		std::this_thread::sleep_for(std::chrono::microseconds(1000000));//Attend 1 seconde.
 
         ret = sensor_state_machine();
         if(ret == 0)
