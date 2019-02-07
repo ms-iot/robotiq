@@ -52,11 +52,16 @@
 #include <windows.h>
 #endif
 
-#include <dirent.h>
 #include <string.h>
+#ifndef _WIN32
+#include <dirent.h>
 #include <unistd.h>
+#endif
 #include <errno.h>
 #include <fcntl.h>
+#include <chrono>
+#include <thread>
+#include <vector>
 
 //application specific
 #include "robotiq_ft_sensor/rq_sensor_com.h"
@@ -267,7 +272,7 @@ static INT_8 rq_com_tentative_connexion()
 	}
 
 	//Give some time to the sensor to switch to modbus
-	usleep(100000);
+	std::this_thread::sleep_for(std::chrono::microseconds(100000));
 
 	//If the device returns an F as the first character of the fw version,
 	//we consider its a sensor
@@ -350,7 +355,7 @@ void rq_com_listen_stream(void)
 
 	}
 
-	usleep(4000);
+	std::this_thread::sleep_for(std::chrono::microseconds(4000));
 
 	//Increment communication state counters
 	if(rq_com_timer_for_stream_detection++ > RQ_COM_TIMER_FOR_STREAM_DETECTION_MAX_VALUE)
@@ -529,7 +534,7 @@ INT_8 rq_com_start_stream(void)
 				return 0;
 			}
 
-			usleep(50000);
+			std::this_thread::sleep_for(std::chrono::microseconds(50000));
 		}
 
 		return -1;
@@ -549,7 +554,7 @@ static INT_8 rq_com_send_fc_03(UINT_16 base, UINT_16 n, UINT_16 * const data)
 	UINT_8 bytes_read = 0;
 	INT_32 i = 0;
 	INT_32 cpt = 0;
-	UINT_8 data_request[n];
+	std::vector<UINT_8> data_request(n);
 	UINT_16 retries = 0;
 
 	//precondition, null pointer
@@ -564,8 +569,8 @@ static INT_8 rq_com_send_fc_03(UINT_16 base, UINT_16 n, UINT_16 * const data)
 	//Read registers
 	while (retries < 100 && bytes_read == 0)
 	{
-		usleep(4000);
-		bytes_read = rq_com_wait_for_fc_03_echo(data_request);
+		std::this_thread::sleep_for(std::chrono::microseconds(4000));
+		bytes_read = rq_com_wait_for_fc_03_echo(data_request.data());
 		retries++;
 	}
 
@@ -593,7 +598,7 @@ static INT_8 rq_com_send_fc_03(UINT_16 base, UINT_16 n, UINT_16 * const data)
 static INT_8 rq_com_send_fc_16(INT_32 base, INT_32 n, UINT_16 const * const data)
 {
 	INT_8 valid_answer = 0;
-	UINT_8 data_request[n];
+	std::vector<UINT_8> data_request(n);
 	UINT_16 retries = 0;
 	UINT_32 i;
 
@@ -615,11 +620,11 @@ static INT_8 rq_com_send_fc_16(INT_32 base, INT_32 n, UINT_16 const * const data
 		}
 	}
 
-	rq_com_send_fc_16_request(base, n, data_request);
+	rq_com_send_fc_16_request(base, n, data_request.data());
 
 	while (retries < 100 && valid_answer == 0)
 	{
-		usleep(10000);
+		std::this_thread::sleep_for(std::chrono::microseconds(10000));
 		valid_answer = rq_com_wait_for_fc_16_echo();
 		retries++;
 	}
@@ -1175,6 +1180,7 @@ void stop_connection()
  */
 static UINT_8 rq_com_identify_device(INT_8 const * const d_name)
 {
+#ifdef __unix__ //For Unix
 	INT_8 dirParent[20] = {0};
 	INT_8 port_com[15] = {0};
 
@@ -1198,6 +1204,7 @@ static UINT_8 rq_com_identify_device(INT_8 const * const d_name)
 		//The device is identified, close the connection
 		close(fd_connexion);
 	}
+#endif
 
 	return 0;
 }

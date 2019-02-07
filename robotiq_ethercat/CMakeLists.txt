@@ -6,6 +6,8 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
 )
 
+find_package(Boost REQUIRED COMPONENTS thread)
+
 catkin_package(
    INCLUDE_DIRS include
    LIBRARIES robotiq_ethercat
@@ -14,6 +16,7 @@ catkin_package(
 
 include_directories(include
   ${catkin_INCLUDE_DIRS}
+  ${Boost_INCLUDE_DIRS}
   ## The following work around allows SOEM headers to include other SOEM headers.
   ## SOEM headers assume all headers are installed in a flat directory structure
   ## See https://github.com/smits/soem/issues/4 for more information.
@@ -24,6 +27,7 @@ add_library(robotiq_ethercat
  include/robotiq_ethercat/ethercat_manager.h
  src/ethercat_manager.cpp
 )
+target_link_libraries(robotiq_ethercat ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
 install(TARGETS robotiq_ethercat
    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
