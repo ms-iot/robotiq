@@ -147,8 +147,16 @@ void Robotiq2FGripperActionServer::analysisCB(const GripperInput::ConstPtr& msg)
     // Check to see if the gripper is active or if it has been asked to be active
     if (current_reg_state_.gSTA == 0x0 && goal_reg_state_.rACT != 0x1)
     {
-      // If it hasn't been asked, active it
-      issueActivation();
+      if (current_reg_state_.gACT == 0x1)
+      {
+        ROS_WARN("%s is in reset state.", action_name_.c_str(), current_reg_state_.gACT);
+        issueReset();
+      }
+      else
+      {
+        // If it hasn't been asked, active it
+        issueActivation();
+      }
     }
 
     // Otherwise wait for the gripper to activate
@@ -189,7 +197,16 @@ void Robotiq2FGripperActionServer::issueActivation()
   ROS_INFO("Activating gripper for gripper action server: %s", action_name_.c_str());
   GripperOutput out;
   out.rACT = 0x1;
-  out.rGTO = 0x1;
+  // other params should be zero
+  goal_reg_state_ = out;
+  goal_pub_.publish(out);
+}
+
+void Robotiq2FGripperActionServer::issueReset()
+{
+  ROS_INFO("Resetting gripper for gripper action server: %s", action_name_.c_str());
+  GripperOutput out;
+  out.rACT = 0x0;
   // other params should be zero
   goal_reg_state_ = out;
   goal_pub_.publish(out);
